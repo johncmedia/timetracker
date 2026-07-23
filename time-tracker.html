@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Time Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base: #10121a;
+  --bg-panel: #181b26;
+  --bg-raised: #20232f;
+  --border: #2a2e3d;
+  --text-primary: #edeef2;
+  --text-muted: #868c9c;
+  --text-faint: #565b6c;
+  --accent: #3ddbd9;
+  --accent-warm: #ff6a3d;
+  --radius: 10px;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 880px; margin: 0 auto; padding: 28px 20px 80px; }
+
+/* header */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 14px; margin-bottom: 24px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), #1f8f8d);
+}
+.brand-text h1 { font-family: var(--font-display); font-size: 18px; margin: 0; }
+.brand-sub { margin: 2px 0 0; font-size: 12.5px; color: var(--text-muted); }
+.topbar-actions { display: flex; gap: 8px; }
+button {
+  font-family: var(--font-body); cursor: pointer; border: 1px solid var(--border);
+  background: var(--bg-raised); color: var(--text-primary); border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; transition: border-color .15s ease;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: #0b1414; border-color: var(--accent); font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); }
+button.ghost { background: transparent; }
+button.small { padding: 5px 10px; font-size: 12px; }
+button.danger:hover { border-color: var(--accent-warm); color: var(--accent-warm); }
+
+/* stats */
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 5px;
+}
+.stat-label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.stat-value { font-family: var(--font-mono); font-size: 21px; }
+
+/* panels */
+.panel {
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px 20px 20px; margin-bottom: 18px;
+}
+.panel h2 { font-family: var(--font-display); font-size: 15px; margin: 0 0 14px; }
+
+/* calendar */
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cal-month-label { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-dow { text-align: center; font-size: 11px; color: var(--text-faint); padding-bottom: 4px; font-family: var(--font-mono); }
+.cal-cell {
+  aspect-ratio: 1; border-radius: 7px; border: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 12px; color: var(--text-muted); position: relative;
+  background: var(--bg-raised); transition: transform .1s ease;
+}
+.cal-cell:hover { transform: translateY(-1px); border-color: var(--accent); }
+.cal-cell.empty { visibility: hidden; cursor: default; }
+.cal-cell.today { border-color: var(--accent-warm); }
+.cal-cell.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cal-cell .hrs { font-family: var(--font-mono); font-size: 9.5px; margin-top: 2px; color: inherit; }
+.cal-legend { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 11px; color: var(--text-faint); }
+.legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+/* entry form */
+#entryPanelDate { font-family: var(--font-mono); font-size: 13px; color: var(--accent); margin-bottom: 12px; }
+.entry-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.entry-form input {
+  background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-primary);
+  border-radius: 8px; padding: 8px 10px; font-family: var(--font-body); font-size: 13px;
+}
+.entry-form input[type="number"] { width: 90px; }
+.entry-form input[type="text"] { flex: 1; min-width: 160px; }
+
+.entries-list { display: flex; flex-direction: column; }
+.entry-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.entry-row:last-child { border-bottom: none; }
+.entry-main { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.entry-task { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+.entry-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.entry-hours { font-family: var(--font-mono); color: var(--accent); font-size: 13px; }
+.empty-note { color: var(--text-faint); font-size: 13px; padding: 6px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <div class="brand-text">
+        <h1>Time Tracker</h1>
+        <p class="brand-sub">Log hours, see them on the calendar</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="ghost small" id="exportBtn">Export</button>
+      <button class="ghost small" id="importBtn">Import</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" />
+    </div>
+  </header>
+
+  <section class="stat-row">
+    <div class="stat-card">
+      <span class="stat-label">This week</span>
+      <span class="stat-value" id="statWeek">0h</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">This month</span>
+      <span class="stat-value" id="statMonth">0h</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Total entries</span>
+      <span class="stat-value" id="statCount">0</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="cal-header">
+      <button class="ghost small" id="prevMonth">&larr;</button>
+      <span class="cal-month-label" id="calMonthLabel"></span>
+      <button class="ghost small" id="nextMonth">&rarr;</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span>Less</span>
+      <span class="legend-swatch" style="background:var(--bg-raised)"></span>
+      <span class="legend-swatch" style="background:rgba(61,219,217,0.3)"></span>
+      <span class="legend-swatch" style="background:rgba(61,219,217,0.55)"></span>
+      <span class="legend-swatch" style="background:rgba(61,219,217,0.8)"></span>
+      <span class="legend-swatch" style="background:#3ddbd9"></span>
+      <span>More</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div id="entryPanelDate">Log time</div>
+    <form class="entry-form" id="entryForm">
+      <input type="date" id="fDate" required />
+      <input type="number" id="fHours" placeholder="Hours" step="0.25" min="0" required />
+      <input type="text" id="fTask" placeholder="What did you work on?" />
+      <button type="submit" class="primary" id="fSubmitBtn">Add</button>
+      <button type="button" class="ghost" id="fCancelBtn" style="display:none">Cancel edit</button>
+    </form>
+    <div id="dayEntries"></div>
+  </section>
+
+  <section class="panel">
+    <h2>All entries</h2>
+    <div id="allEntries" class="entries-list"></div>
+  </section>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'time_tracker_entries_v1';
+
+function loadEntries() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch (e) { return []; }
+}
+function saveEntries(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+function isoDate(d) {
+  return d.toISOString().slice(0, 10);
+}
+function todayISO() { return isoDate(new Date()); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+let entries = loadEntries();
+let editingId = null;
+let selectedDate = todayISO();
+let viewYear = new Date().getFullYear();
+let viewMonth = new Date().getMonth(); // 0-indexed
+
+function hoursForDate(dateStr) {
+  return entries.filter(e => e.date === dateStr).reduce((sum, e) => sum + Number(e.hours), 0);
+}
+
+function intensityFor(hours) {
+  if (hours <= 0) return 'var(--bg-raised)';
+  if (hours < 2) return 'rgba(61,219,217,0.3)';
+  if (hours < 4) return 'rgba(61,219,217,0.55)';
+  if (hours < 6) return 'rgba(61,219,217,0.8)';
+  return '#3ddbd9';
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const dows = ['S','M','T','W','T','F','S'];
+  dows.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const startOffset = firstOfMonth.getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const today = todayISO();
+
+  for (let i = 0; i < startOffset; i++) {
+    const filler = document.createElement('div');
+    filler.className = 'cal-cell empty';
+    grid.appendChild(filler);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateObj = new Date(viewYear, viewMonth, day);
+    const dateStr = isoDate(dateObj);
+    const hrs = hoursForDate(dateStr);
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    if (dateStr === today) cell.classList.add('today');
+    if (dateStr === selectedDate) cell.classList.add('selected');
+    cell.style.background = intensityFor(hrs);
+    cell.innerHTML = `<span>${day}</span>` + (hrs > 0 ? `<span class="hrs">${hrs}h</span>` : '');
+    cell.addEventListener('click', () => {
+      selectedDate = dateStr;
+      document.getElementById('fDate').value = dateStr;
+      renderCalendar();
+      renderDayEntries();
+    });
+    grid.appendChild(cell);
+  }
+
+  const monthLabel = firstOfMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  document.getElementById('calMonthLabel').textContent = monthLabel;
+}
+
+function renderDayEntries() {
+  const container = document.getElementById('dayEntries');
+  document.getElementById('entryPanelDate').textContent = `Log time — ${selectedDate}`;
+  const dayList = entries.filter(e => e.date === selectedDate).sort((a,b) => a.createdAt - b.createdAt);
+
+  if (!dayList.length) {
+    container.innerHTML = '<div class="empty-note">Nothing logged for this day yet.</div>';
+    return;
+  }
+  container.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'entries-list';
+  for (const e of dayList) {
+    list.appendChild(buildEntryRow(e));
+  }
+  container.appendChild(list);
+}
+
+function buildEntryRow(e) {
+  const row = document.createElement('div');
+  row.className = 'entry-row';
+  row.innerHTML = `
+    <div class="entry-main">
+      <span class="entry-task">${e.task || '(no note)'}</span>
+      <span class="entry-date">${e.date}</span>
+    </div>
+    <div class="entry-right">
+      <span class="entry-hours">${e.hours}h</span>
+      <button class="ghost small" data-action="edit">Edit</button>
+      <button class="ghost small danger" data-action="delete">Delete</button>
+    </div>
+  `;
+  row.querySelector('[data-action="edit"]').addEventListener('click', () => startEdit(e.id));
+  row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteEntry(e.id));
+  return row;
+}
+
+function renderAllEntries() {
+  const container = document.getElementById('allEntries');
+  const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  if (!sorted.length) {
+    container.innerHTML = '<div class="empty-note">No entries yet — log your first one above.</div>';
+    return;
+  }
+  container.innerHTML = '';
+  for (const e of sorted) container.appendChild(buildEntryRow(e));
+}
+
+function updateStats() {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0,0,0,0);
+  const weekStr = isoDate(startOfWeek);
+
+  const monthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  let weekTotal = 0, monthTotal = 0;
+  for (const e of entries) {
+    if (e.date >= weekStr) weekTotal += Number(e.hours);
+    if (e.date.startsWith(monthPrefix)) monthTotal += Number(e.hours);
+  }
+  document.getElementById('statWeek').textContent = `${round1(weekTotal)}h`;
+  document.getElementById('statMonth').textContent = `${round1(monthTotal)}h`;
+  document.getElementById('statCount').textContent = entries.length;
+}
+
+function round1(n) { return Math.round(n * 10) / 10; }
+
+function renderAll() {
+  renderCalendar();
+  renderDayEntries();
+  renderAllEntries();
+  updateStats();
+}
+
+function startEdit(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  document.getElementById('fDate').value = e.date;
+  document.getElementById('fHours').value = e.hours;
+  document.getElementById('fTask').value = e.task;
+  document.getElementById('fSubmitBtn').textContent = 'Save';
+  document.getElementById('fCancelBtn').style.display = 'inline-block';
+  window.scrollTo({ top: document.getElementById('entryForm').offsetTop - 40, behavior: 'smooth' });
+}
+
+function resetForm() {
+  editingId = null;
+  document.getElementById('entryForm').reset();
+  document.getElementById('fDate').value = selectedDate;
+  document.getElementById('fSubmitBtn').textContent = 'Add';
+  document.getElementById('fCancelBtn').style.display = 'none';
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  saveEntries(entries);
+  renderAll();
+}
+
+document.getElementById('entryForm').addEventListener('submit', (evt) => {
+  evt.preventDefault();
+  const date = document.getElementById('fDate').value;
+  const hours = document.getElementById('fHours').value;
+  const task = document.getElementById('fTask').value.trim();
+  if (!date || !hours) return;
+
+  if (editingId) {
+    const e = entries.find(x => x.id === editingId);
+    e.date = date; e.hours = Number(hours); e.task = task;
+  } else {
+    entries.push({ id: uid(), date, hours: Number(hours), task, createdAt: Date.now() });
+  }
+  saveEntries(entries);
+  selectedDate = date;
+  resetForm();
+  renderAll();
+});
+
+document.getElementById('fCancelBtn').addEventListener('click', resetForm);
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  renderCalendar();
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `time-tracker-export-${todayISO()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (evt) => {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (!Array.isArray(imported)) throw new Error('bad format');
+      const existingIds = new Set(entries.map(e => e.id));
+      for (const e of imported) {
+        if (e && e.id && !existingIds.has(e.id)) entries.push(e);
+      }
+      saveEntries(entries);
+      renderAll();
+    } catch (e) {
+      alert('Could not read that file — expected a JSON export from this tool.');
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+});
+
+// init
+document.getElementById('fDate').value = selectedDate;
+renderAll();
+</script>
+</body>
+</html>
